@@ -1,12 +1,5 @@
-# Time series data loaders
+# Time Series Data Loaders
 
-a few data loaders for experimenting with time series
+Some data loaders for time series datasets, following a nixtla-based structure.
 
-some of these are deprecated in favor of the chronos api set by Amazon's team
-keeping these for future reference
-
-setting datasets into a nixtla-based structure
-
-wrapping on external sources
-
-
+Most are deprecated in favor of Chronos Huggingface API
