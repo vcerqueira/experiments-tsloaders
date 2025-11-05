@@ -6,6 +6,7 @@ import pandas as pd
 
 from huggingface_hub import dataset_info
 
+
 # dt = ChronosDataset.get_chronos_datasets_names()
 
 
@@ -73,7 +74,7 @@ class ChronosDataset:
         ds = datasets.load_dataset(path=cls.REPO_ID, name=group, split=split)
         ds.set_format("numpy")
 
-        df = cls.to_pandas(ds)
+        df = cls.to_pandas(ds).reset_index(drop=True)
         df = df.rename(columns={'id': id_col,
                                 'timestamp': time_col,
                                 'target': target_col})
@@ -89,15 +90,17 @@ class ChronosDataset:
                         group: str,
                         split: str,
                         min_n_instances: Optional[int] = None,
-                        sample_n_uid: Optional[int] = None):
+                        sample_n_uid: Optional[int] = None,
+                        id_col: str = 'unique_id',
+                        time_col: str = 'ds'):
 
         if split == 'both':
-            # todo ..
-            pass
-
-        df = cls.load_data(group=group,
-                           split=split,
-                           min_n_instances=min_n_instances)
+            # todo is there even a test split in chronos?
+            df_train = cls.load_data(group=group, split='train', min_n_instances=min_n_instances)
+            df_test = cls.load_data(group=group, split='test', min_n_instances=min_n_instances)
+            df = pd.concat([df_train, df_test], axis=0).sort_values([id_col, time_col]).reset_index(drop=True)
+        else:
+            df = cls.load_data(group=group, split=split, min_n_instances=min_n_instances)
 
         horizon = cls.horizons_map.get(group)
         n_lags = cls.context_length.get(group)
@@ -173,6 +176,20 @@ class ChronosDataset:
         test_df = pd.concat(test_l).reset_index(drop=True)
 
         return train_df, test_df
+
+    @staticmethod
+    def difference_series(df):
+        df_uid = df.copy().groupby('unique_id')
+
+        diff_l = []
+        for g, uid_df in df_uid:
+            uid_df['y'] = uid_df['y'].diff()
+
+            diff_l.append(uid_df.tail(-1))
+
+        diff_df = pd.concat(diff_l, axis=0).reset_index(drop=True)
+
+        return diff_df
 
     @staticmethod
     def get_chronos_datasets_names(repo_id='autogluon/chronos_datasets'):

@@ -1,7 +1,7 @@
-from loaders.m3 import M3Dataset
-from loaders.m4 import M4Dataset
-from loaders.tourism import TourismDataset
-from loaders.gluonts import GluontsDataset
+from loaders.deprecated.m3 import M3Dataset
+from loaders.deprecated.m4 import M4Dataset
+from loaders.deprecated.tourism import TourismDataset
+from loaders.deprecated.gluonts import GluontsDataset
 
 
 """

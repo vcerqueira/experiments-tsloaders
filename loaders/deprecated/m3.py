@@ -2,7 +2,7 @@ from typing import Optional
 
 from datasetsforecast.m3 import M3
 
-from loaders.base import LoadDataset
+from loaders.deprecated.base import LoadDataset
 
 
 """

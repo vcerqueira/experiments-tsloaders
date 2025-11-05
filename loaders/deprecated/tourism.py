@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
-from loaders.base import LoadDataset
+from loaders.deprecated.base import LoadDataset
 
 """
 DEPRECATED -- USE CHRONOS API

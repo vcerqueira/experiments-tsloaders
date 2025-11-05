@@ -1,7 +1,7 @@
 import pandas as pd
 from datasetsforecast.m4 import M4
 
-from loaders.base import LoadDataset
+from loaders.deprecated.base import LoadDataset
 
 """
 DEPRECATED -- USE CHRONOS API
