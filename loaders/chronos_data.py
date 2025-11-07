@@ -98,6 +98,20 @@ class ChronosDataset:
         if min_n_instances is not None:
             df = cls.prune_uids_by_size(df, min_n_instances)
 
+        # todo this was done for yearly time series (m4_yearly) ... format may not be appropriate for others
+        if df[time_col].dtype == 'O':
+            try:
+                df[time_col] = pd.to_datetime(df[time_col])
+            except pd.errors.OutOfBoundsDatetime:
+                df[time_col] = pd.to_datetime(df[time_col], errors='coerce', format="%Y-%m-%dT%H:%M:%S.%f")
+                if df[time_col].isna().any():
+                    df[time_col] = (
+                        df[time_col]
+                        .astype(str)
+                        .str.slice(0, 10)
+                    )
+                    df['ds'] = pd.to_datetime(df[time_col], errors='coerce', format="%Y-%m-%d")
+
         return df
 
     @classmethod
