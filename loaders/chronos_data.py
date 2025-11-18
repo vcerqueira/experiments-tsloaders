@@ -1,3 +1,4 @@
+from math import e
 from typing import Optional
 
 import datasets
@@ -69,6 +70,8 @@ class ChronosDataset:
         'm4_weekly': 'W',
         'm4_daily': 'D',
         'm4_yearly': 'Y',
+        'm5': 'D',
+        'm5-RESAMPLE-MS-sum': 'MS',
         'monash_hospital': 'MS',
         'monash_car_parts': 'MS',
     }
@@ -80,7 +83,9 @@ class ChronosDataset:
                   min_n_instances: Optional[int] = None,
                   id_col: str = 'unique_id',
                   time_col: str = 'ds',
-                  target_col: str = 'y'):
+                  target_col: str = 'y',
+                  resample_to: Optional[str] = None,
+                  resample_stat: str = 'sum'):
 
         assert group in [*cls.FREQUENCY_MAP_DATASETS], 'Unknown dataset'
 
@@ -112,6 +117,10 @@ class ChronosDataset:
                     )
                     df['ds'] = pd.to_datetime(df[time_col], errors='coerce', format="%Y-%m-%d")
 
+
+        if resample_to is not None:
+            df = cls.resample_df(df, resample_to, time_col, resample_stat)
+
         return df
 
     @classmethod
@@ -126,7 +135,13 @@ class ChronosDataset:
         #     df_test = cls.load_data(group=group, split='test', min_n_instances=min_n_instances)
         #     df = pd.concat([df_train, df_test], axis=0).sort_values([id_col, time_col]).reset_index(drop=True)
 
-        df = cls.load_data(group=group, split=split, min_n_instances=min_n_instances)
+        group_name, resample_to, resample_stat = cls.resample_info_from_group(group)
+
+        df = cls.load_data(group=group_name,
+                           split=split,
+                           min_n_instances=min_n_instances,
+                           resample_to=resample_to,
+                           resample_stat=resample_stat)
 
         freq = cls.FREQUENCY_MAP_DATASETS.get(group)
 
@@ -144,6 +159,26 @@ class ChronosDataset:
             df = cls.sample_first_uids(df, sample_n_uid)
 
         return df, horizon, n_lags, freq, seas_len
+
+    @staticmethod
+    def resample_df(df: pd.DataFrame, resample_to: str, time_col: str, resample_stat: str):
+        return df.resample(resample_to, on=time_col).agg(resample_stat)
+
+    @staticmethod
+    def resample_info_from_group(group: str):
+        # 'm5-RESAMPLE-MS-sum'
+
+        if 'RESAMPLE' not in group:
+            return group, None, None
+
+        group_name = group.split('-RESAMPLE-')[0]
+
+        rs_info = group.split('-RESAMPLE-')[1].split('-')
+
+        resample_to = rs_info[0]
+        resample_stat = rs_info[1]
+
+        return group_name, resample_to, resample_stat
 
     @staticmethod
     def prune_uids_by_size(df: pd.DataFrame,
