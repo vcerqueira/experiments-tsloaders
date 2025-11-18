@@ -2,8 +2,7 @@ from pprint import pprint
 
 from loaders import ChronosDataset
 
-group = 'm5'
-group = 'm5-RESAMPLE-MS-sum'
+group = 'monash_tourism_monthly'
 
 # the chronos train split actually also contains the test set (last 18 observations)
 # ... at least for m4 monthly (didn't check others)
