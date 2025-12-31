@@ -54,6 +54,10 @@ class ChronosDataset:
 
     # LAGS_BY_FREQUENCY = {k: int(v * 1.25) for k, v in HORIZON_MAP.items()}
 
+    SPECIAL_HORIZON_MAP = {
+        'monash_m1_monthly': 6,  # time series are too short for 12 or 18
+    }
+
     FREQUENCY_MAP_DATASETS = {
         'monash_m1_monthly': 'M',
         'monash_m1_quarterly': 'Q',
@@ -145,10 +149,13 @@ class ChronosDataset:
 
         freq = cls.FREQUENCY_MAP_DATASETS.get(group)
 
-        if group.startswith('m4'):
-            horizon = cls.M4_HORIZON_MAP.get(freq)
+        if group in [*cls.SPECIAL_HORIZON_MAP]:
+            horizon = cls.SPECIAL_HORIZON_MAP[group]
         else:
-            horizon = cls.HORIZON_MAP.get(freq)
+            if group.startswith('m4'):
+                horizon = cls.M4_HORIZON_MAP.get(freq)
+            else:
+                horizon = cls.HORIZON_MAP.get(freq)
 
         n_lags = int(horizon * 1.25)
 
