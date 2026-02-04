@@ -43,7 +43,8 @@ class DatasetLoader:
                         group: str,
                         split: str = 'train',
                         min_n_instances: Optional[int] = None,
-                        sample_n_uid: Optional[int] = None):
+                        sample_n_uid: Optional[int] = None,
+                        **kwargs):
 
         pass
 
