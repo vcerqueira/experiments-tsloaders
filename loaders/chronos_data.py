@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from huggingface_hub import dataset_info
 
-from src.loaders.base import DatasetLoader
+from loaders.base import DatasetLoader
 
 
 class ChronosDataset(DatasetLoader):

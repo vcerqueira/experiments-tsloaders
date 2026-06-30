@@ -137,3 +137,6 @@ class LongHorizonDatasetR(LongHorizonDataset):
             )
 
             return hourly_df, d_horizon, d_n_lags, freq, seas_len
+        else:
+            raise NotImplementedError
+
