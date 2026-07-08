@@ -91,6 +91,19 @@ class DatasetLoader:
         return tail_df
 
     @staticmethod
+    def remove_uids_with_nas(df: pd.DataFrame,
+                             id_col: str = 'unique_id',
+                             target_col: str = 'y') -> pd.DataFrame:
+        """
+        Removes any unique_id groups where the target column contains one or more NA values.
+        """
+        bad_ids = df.loc[df[target_col].isna(), id_col].unique()
+
+        filtered_df = df[~df[id_col].isin(bad_ids)].reset_index(drop=True)
+
+        return filtered_df
+
+    @staticmethod
     def time_wise_split(df: pd.DataFrame,
                         horizon: int,
                         id_col: str = 'unique_id',
