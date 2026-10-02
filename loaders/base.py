@@ -3,50 +3,46 @@ from typing import Optional
 import pandas as pd
 
 
-class DatasetLoader:
-    DATASET_NAME = ''
+class DataPreprocessing:
+    """Panel reshaping that does not load a dataset or fit a model."""
 
-    HORIZON_MAP = {}
+    @staticmethod
+    def future_dates(last, h: int, freq: str = 'ME') -> pd.DatetimeIndex:
+        """The ``h`` dates of ``freq`` that follow ``last``."""
+        offset = pd.tseries.frequencies.to_offset(freq)
+        start = pd.Timestamp(last) + offset
+        return pd.date_range(start=start, periods=int(h), freq=freq)
 
-    SPECIAL_HORIZON_MAP = {}
+    @staticmethod
+    def iter_panel(df: pd.DataFrame, id_col: str = 'unique_id', time_col: str = 'ds',
+                   target_col: str = 'y'):
+        """Yield ``(unique_id, dates, values)`` in first-seen series order."""
+        if df.empty:
+            return
+        for uid, group in df.groupby(id_col, sort=False):
+            group = group.sort_values(time_col)
+            yield (str(uid),
+                   group[time_col].to_numpy(),
+                   group[target_col].to_numpy(dtype='float64'))
 
-    FREQUENCY_MAP = {
-        "Y": 1,
-        "Q": 4,
-        "M": 12,
-        "MS": 12,
-        "ME": 12,
-        "W": 52,  # ?
-        "D": 365,  # 7?
-        "H": 24,
-        "T": 1,  # ?
-        "S": 1,  # ?
-    }
+    @staticmethod
+    def select_series(df: pd.DataFrame, uids, id_col: str = 'unique_id',
+                      time_col: str = 'ds') -> pd.DataFrame:
+        """Rows of ``df`` for ``uids``, in that order."""
+        rank = {str(u): i for i, u in enumerate(uids)}
+        part = df[df[id_col].astype(str).isin(rank)].copy()
+        part['_i'] = part[id_col].astype(str).map(rank)
+        return part.sort_values(['_i', time_col], kind='mergesort').drop(columns='_i').reset_index(drop=True)
 
-    FREQUENCY_MAP_DATASETS = {
-        'monash_m1_monthly': 'M',
-    }
-
-    @classmethod
-    def load_data(cls,
-                  group: str,
-                  split: str = 'train',
-                  min_n_instances: Optional[int] = None,
-                  id_col: str = 'unique_id',
-                  time_col: str = 'ds',
-                  target_col: str = 'y'):
-
-        pass
-
-    @classmethod
-    def load_everything(cls,
-                        group: str,
-                        split: str = 'train',
-                        min_n_instances: Optional[int] = None,
-                        sample_n_uid: Optional[int] = None,
-                        **kwargs):
-
-        pass
+    @staticmethod
+    def unpack(df: pd.DataFrame):
+        """``(unique_ids, values, last_dates)`` in first-seen series order."""
+        uids, values, last = [], [], []
+        for uid, dates, y in DataPreprocessing.iter_panel(df):
+            uids.append(uid)
+            values.append(y)
+            last.append(dates[-1])
+        return uids, values, last
 
     @staticmethod
     def prune_uids_by_size(df: pd.DataFrame,
@@ -108,7 +104,7 @@ class DatasetLoader:
                         horizon: int,
                         id_col: str = 'unique_id',
                         time_col: str = 'ds'):
-        df_by_unq = df.groupby(id_col)
+        df_by_unq = df.copy().groupby(id_col)
 
         train_l, test_l = [], []
         for g, df_ in df_by_unq:
@@ -142,3 +138,49 @@ class DatasetLoader:
     @staticmethod
     def concat_time_wise_tr_ts(tr: pd.DataFrame, ts: pd.DataFrame):
         return pd.concat([tr, ts], axis=0).sort_values(['unique_id', 'ds']).reset_index(drop=True)
+
+
+class DatasetLoader(DataPreprocessing):
+    DATASET_NAME = ''
+
+    HORIZON_MAP = {}
+
+    SPECIAL_HORIZON_MAP = {}
+
+    FREQUENCY_MAP = {
+        "Y": 1,
+        "Q": 4,
+        "M": 12,
+        "MS": 12,
+        "ME": 12,
+        "W": 52,  # ?
+        "D": 365,  # 7?
+        "H": 24,
+        "T": 1,  # ?
+        "S": 1,  # ?
+    }
+
+    FREQUENCY_MAP_DATASETS = {
+        'monash_m1_monthly': 'M',
+    }
+
+    @classmethod
+    def load_data(cls,
+                  group: str,
+                  split: str = 'train',
+                  min_n_instances: Optional[int] = None,
+                  id_col: str = 'unique_id',
+                  time_col: str = 'ds',
+                  target_col: str = 'y'):
+
+        pass
+
+    @classmethod
+    def load_everything(cls,
+                        group: str,
+                        split: str = 'train',
+                        min_n_instances: Optional[int] = None,
+                        sample_n_uid: Optional[int] = None,
+                        **kwargs):
+
+        pass
